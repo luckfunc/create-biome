@@ -14,6 +14,11 @@ const biomeConfig = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'biome.template.json'), 'utf8'),
 );
 
+const editorConfigContent = fs.readFileSync(
+  path.join(__dirname, 'editorconfig.template'),
+  'utf8',
+);
+
 function detectPackageManager(cwd: string) {
   if (fs.existsSync(path.join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
   if (fs.existsSync(path.join(cwd, 'yarn.lock'))) return 'yarn';
@@ -40,7 +45,7 @@ async function runInteractiveInit() {
   // 0. 确认目录
   const dirConfirm = await confirm({ message: `在目录：${cwd} 初始化？` });
   if (isCancel(dirConfirm) || dirConfirm === false) {
-    cancel('已取消');
+    cancel('👋 已取消');
     process.exit(0);
   }
 
@@ -52,15 +57,33 @@ async function runInteractiveInit() {
   }
 
   // 2. 自动生成 ignore
-  const biomeIgnore = path.join(cwd, '.gitignore');
+  const biomeIgnore = path.join(cwd, '.biomeignore');
   const gitIgnore = path.join(cwd, '.gitignore');
 
-  if (!fs.existsSync(biomeIgnore) && !fs.existsSync(gitIgnore)) {
+  if (!fs.existsSync(biomeIgnore)) {
     fs.writeFileSync(biomeIgnore, '# Created by create-biome\n');
-    console.log(chalk.gray('📄 已创建 .gitignore'));
+    console.log(chalk.gray('📄 已创建 .biomeignore'));
   }
 
-  // 3. 包管理器选择
+  if (!fs.existsSync(gitIgnore)) {
+    fs.writeFileSync(gitIgnore, '# Created by create-biome\n.biomeignore\n');
+    console.log(chalk.gray('📄 已创建 .gitignore'));
+  } else {
+    const gitIgnoreContent = fs.readFileSync(gitIgnore, 'utf8');
+    if (!gitIgnoreContent.includes('.biomeignore')) {
+      fs.appendFileSync(gitIgnore, '\n# Create Biome\n.biomeignore\n');
+      console.log(chalk.gray('📄 已向 .gitignore 添加 .biomeignore 记录'));
+    }
+  }
+
+  // 3. 写入 .editorconfig
+  const editorConfigPath = path.join(cwd, '.editorconfig');
+  if (!fs.existsSync(editorConfigPath)) {
+    fs.writeFileSync(editorConfigPath, editorConfigContent);
+    console.log(chalk.gray('📄 已创建 .editorconfig'));
+  }
+
+  // 4. 包管理器选择
   const autoPM = detectPackageManager(cwd);
 
   const pm = await select({
@@ -70,11 +93,11 @@ async function runInteractiveInit() {
   });
 
   if (isCancel(pm)) {
-    cancel('已取消');
+    cancel('👋 已取消');
     process.exit(0);
   }
 
-  // 4. 写入 biome.json
+  // 5. 写入 biome.json
   const biomePath = path.join(cwd, 'biome.json');
   if (!fs.existsSync(biomePath)) {
     fs.writeFileSync(biomePath, JSON.stringify(biomeConfig, null, 2));
@@ -83,7 +106,7 @@ async function runInteractiveInit() {
     console.log('⚠️ biome.json 已存在，不覆盖');
   }
 
-  // 5. 安装依赖
+  // 6. 安装依赖
   const load = spinner();
   load.start(`安装 @biomejs/biome ...`);
   try {
@@ -93,7 +116,7 @@ async function runInteractiveInit() {
     load.stop('❌ 安装失败，请手动安装');
   }
 
-  // 6. 安装 CLI 平台包
+  // 7. 安装 CLI 平台包
   let cliPkg: string | null = null;
   const os = process.platform;
   const arch = process.arch;
@@ -113,7 +136,7 @@ async function runInteractiveInit() {
     }
   }
 
-  // 7. 注入 scripts
+  // 8. 注入 scripts
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   pkg.scripts ||= {};
   pkg.scripts['lint'] ||= 'biome check .';
