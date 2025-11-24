@@ -12,7 +12,7 @@
 ## 快速开始
 
 ```bash
-npx create-biome init
+npx create-biome
 ```
 
 执行过程中会通过终端交互确认目标目录与包管理器，其余步骤全自动完成。默认会在未检测到的情况下创建 `.biomeignore`、`.gitignore`（附带 `.biomeignore` 记录）和 `.editorconfig`。
@@ -53,3 +53,9 @@ pnpm lint   # 运行 Biome 检查
 ## 许可证
 
 MIT
+
+## TODO
+
+- 适配 Node 14/16 等低版本环境，去除或降级仍旧不兼容的语法特性。
+- 修复低版本 Node 安装依赖时可能出现的异常（例如 CLI 平台包识别失败或 execSync 权限问题）。
+- 在至少 20 个真实项目中跑通 `create-biome` 全流程，记录结果并完善文档。
