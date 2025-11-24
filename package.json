@@ -1,13 +1,13 @@
 {
   "name": "create-biome",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "bin": {
     "create-biome": "./dist/index.js"
   },
   "type": "module",
   "scripts": {
-    "build": "tsdown build src/index.ts --outDir dist",
-    "dev": "tsdown watch src/index.ts --outDir dist",
+    "build": "tsdown src/index.ts --outDir dist",
+    "dev": "tsdown --watch src/index.ts --outDir dist",
     "lint": "biome check .",
     "lint:fix": "biome format --write . && biome check --write ."
   },
