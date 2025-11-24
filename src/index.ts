@@ -14,10 +14,7 @@ const biomeConfig = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'biome.template.json'), 'utf8'),
 );
 
-const editorConfigContent = fs.readFileSync(
-  path.join(__dirname, 'editorconfig.template'),
-  'utf8',
-);
+const editorConfigContent = fs.readFileSync(path.join(__dirname, 'editorconfig.template'), 'utf8');
 
 function detectPackageManager(cwd: string) {
   if (fs.existsSync(path.join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
@@ -112,7 +109,7 @@ async function runInteractiveInit() {
   try {
     execSync(`${pm} add -D @biomejs/biome`, { stdio: 'ignore' });
     load.stop('📦 已安装 @biomejs/biome');
-  } catch (e) {
+  } catch {
     load.stop('❌ 安装失败，请手动安装');
   }
 
@@ -139,7 +136,7 @@ async function runInteractiveInit() {
   // 8. 注入 scripts
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   pkg.scripts ||= {};
-  pkg.scripts['lint'] ||= 'biome check .';
+  pkg.scripts.lint ||= 'biome check .';
   pkg.scripts['lint:fix'] ||= 'biome format --write . && biome check --write .';
 
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
