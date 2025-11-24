@@ -138,12 +138,8 @@ async function runInteractiveInit() {
   if (!pkg.scripts) {
     pkg.scripts = {};
   }
-  if (!pkg.scripts.lint) {
-    pkg.scripts.lint = 'biome check .';
-  }
-  if (!pkg.scripts['lint:fix']) {
-    pkg.scripts['lint:fix'] = 'biome format --write . && biome check --write .';
-  }
+  pkg.scripts.lint = 'biome check .';
+  pkg.scripts['lint:fix'] = 'biome format --write . && biome check --write .';
 
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
   console.log('🔧 package.json scripts 已添加');
