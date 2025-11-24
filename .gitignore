@@ -10,3 +10,6 @@ yarn.lock
 *.min.js
 .idea
 .vscode
+
+# Create Biome
+.biomeignore
