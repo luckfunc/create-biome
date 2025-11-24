@@ -1,19 +1,20 @@
 {
   "name": "create-biome",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "bin": {
-    "create-biome": "./dist/index.js"
+    "create-biome": "./dist/index.mjs"
   },
   "type": "module",
   "scripts": {
-    "build": "tsdown src/index.ts --outDir dist",
-    "dev": "tsdown --watch src/index.ts --outDir dist",
+    "build": "tsdown src/index.ts --outDir dist --copy src/biome.template.json --copy src/editorconfig.template",
+    "dev": "tsdown --watch src/index.ts --outDir dist --copy src/biome.template.json --copy src/editorconfig.template",
     "lint": "biome check .",
     "lint:fix": "biome format --write . && biome check --write ."
   },
   "files": [
     "dist/",
-    "src/biome.template.json"
+    "src/biome.template.json",
+    "src/editorconfig.template"
   ],
   "devDependencies": {
     "@biomejs/biome": "^2.3.7",
