@@ -193,19 +193,6 @@ async function runInteractiveInit() {
   // 8. 安装依赖
   installDevDependencies(pm, ['@biomejs/biome'], '@biomejs/biome');
 
-  // 9. 安装 CLI 平台包
-  let cliPkg: string | null = null;
-  const os = process.platform;
-  const arch = process.arch;
-
-  if (os === 'darwin' && arch === 'arm64') cliPkg = '@biomejs/cli-darwin-arm64';
-  else if (os === 'darwin' && arch === 'x64') cliPkg = '@biomejs/cli-darwin-x64';
-  else if (os === 'linux' && arch === 'x64') cliPkg = '@biomejs/cli-linux-x64';
-
-  if (cliPkg) {
-    installDevDependencies(pm, [cliPkg], cliPkg);
-  }
-
   outro('🎉 create-biome 初始化完成');
 }
 
