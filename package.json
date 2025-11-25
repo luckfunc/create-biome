@@ -25,5 +25,11 @@
     "commander": "^14.0.2",
     "tsdown": "^0.16.6",
     "typescript": "^5.6.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luckfunc/create-biome.git"
+  },
+  "funding": "https://github.com/sponsors/luckfunc",
+  "homepage": "https://github.com/luckfunc/create-biome#readme"
 }
