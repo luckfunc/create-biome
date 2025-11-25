@@ -60,3 +60,5 @@ MIT
 - 修复低版本 Node 安装依赖时可能出现的异常（例如 CLI 平台包识别失败或 execSync 权限问题）。
 - 在至少 20 个真实项目中跑通 `create-biome` 全流程，记录结果并完善文档。
 - 在下载安装依赖的时候 cli缺少loading效果。
+- 在安装biome时，删除eslint和prettier依赖。
+- 支持多项目模板 如react,nodeJs
