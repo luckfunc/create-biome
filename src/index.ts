@@ -39,6 +39,32 @@ function getPackageManagerOptions(autoPM: string) {
   }));
 }
 
+function getDevInstallCommand(pm: string, packages: string[]) {
+  const pkgList = packages.join(' ');
+  switch (pm) {
+    case 'npm':
+      return `npm install --save-dev ${pkgList}`;
+    case 'yarn':
+      return `yarn add --dev ${pkgList}`;
+    case 'bun':
+      return `bun add --dev ${pkgList}`;
+    default:
+      return `pnpm add -D ${pkgList}`;
+  }
+}
+
+function installDevDependencies(pm: string, packages: string[], label: string) {
+  const command = getDevInstallCommand(pm, packages);
+  const load = spinner();
+  load.start(`安装 ${label} ...`);
+  try {
+    execSync(command, { stdio: 'ignore' });
+    load.stop(`📦 已安装 ${label}`);
+  } catch {
+    load.stop(`❌ 安装 ${label} 失败，请手动执行：${command}`);
+  }
+}
+
 function updatePackageJsonWithTemplate(pkgPath: string, template: TemplateDefinition) {
   const pkg = readPackageJson(pkgPath);
 
@@ -165,14 +191,7 @@ async function runInteractiveInit() {
   removeDeleteMarkers(cwd, [baseTemplateAssets.templateDir, selectedTemplate.templateDir]);
 
   // 8. 安装依赖
-  const load = spinner();
-  load.start(`安装 @biomejs/biome ...`);
-  try {
-    execSync(`${pm} add -D @biomejs/biome`, { stdio: 'ignore' });
-    load.stop('📦 已安装 @biomejs/biome');
-  } catch {
-    load.stop('❌ 安装失败，请手动安装');
-  }
+  installDevDependencies(pm, ['@biomejs/biome'], '@biomejs/biome');
 
   // 9. 安装 CLI 平台包
   let cliPkg: string | null = null;
@@ -184,14 +203,7 @@ async function runInteractiveInit() {
   else if (os === 'linux' && arch === 'x64') cliPkg = '@biomejs/cli-linux-x64';
 
   if (cliPkg) {
-    const load2 = spinner();
-    load2.start(`安装 ${cliPkg} ...`);
-    try {
-      execSync(`${pm} add -D ${cliPkg}`, { stdio: 'ignore' });
-      load2.stop(`📦 已安装 ${cliPkg}`);
-    } catch {
-      load2.stop('❌ 安装 CLI 失败，请手动安装');
-    }
+    installDevDependencies(pm, [cliPkg], cliPkg);
   }
 
   outro('🎉 create-biome 初始化完成');
