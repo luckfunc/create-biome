@@ -61,3 +61,4 @@ MIT
 - 在下载安装依赖的时候 cli缺少loading效果。
 - 在安装biome时，删除eslint和prettier依赖。
 - 支持多项目模板 如react,nodeJs
+- 支持biome import配置
