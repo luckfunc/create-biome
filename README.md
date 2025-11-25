@@ -28,15 +28,14 @@ pnpm build  # 进行一次完整构建并复制模板文件到 dist/
 pnpm lint   # 运行 Biome 检查
 ```
 
-发布之前请确保 `dist/` 中包含 `index.mjs` 以及两个模板文件（构建脚本已通过 `tsdown --copy` 自动处理）。
+发布之前请确保 `dist/` 中包含 `index.mjs` 以及模板目录（构建脚本已通过 `tsdown --copy` 自动处理）。
 
 ## 目录结构
 
 ```
 .
 ├── src/index.ts               # CLI 入口
-├── src/biome.template.json    # Biome 配置模板
-├── src/editorconfig.template  # EditorConfig 模板
+├── src/template/              # 模板（React / JavaScript / Base，含 editorconfig 等配置）
 ├── dist/                      # 构建产物（publish 时使用）
 └── .github/workflows/         # CI（pnpm 安装、lint、发布）
 ```

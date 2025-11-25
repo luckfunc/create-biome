@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "lint": "biome check .",
+    "lint:fix": "biome format --write . && biome check --write .",
+    "lint:ci": "biome check ."
+  }
+}

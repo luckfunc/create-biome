@@ -7,14 +7,18 @@ import fs from 'fs';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { availableTemplates, baseTemplateAssets, getTemplateById } from './templates.ts';
+import type { TemplateDefinition, TemplateId } from './templates.ts';
+import { removeDeleteMarkers } from './utils/deleteMarkers.ts';
+import {
+  applyPackageDeleteSpec,
+  applyPackageMergeSpec,
+  loadJsonIfExists,
+  readPackageJson,
+  writePackageJson,
+} from './utils/packageJson.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const biomeConfig = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'biome.template.json'), 'utf8'),
-);
-
-const editorConfigContent = fs.readFileSync(path.join(__dirname, 'editorconfig.template'), 'utf8');
 
 function detectPackageManager(cwd: string) {
   if (fs.existsSync(path.join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
@@ -35,6 +39,31 @@ function getPackageManagerOptions(autoPM: string) {
   }));
 }
 
+function updatePackageJsonWithTemplate(pkgPath: string, template: TemplateDefinition) {
+  const pkg = readPackageJson(pkgPath);
+
+  const deleteSpecs = [
+    loadJsonIfExists(baseTemplateAssets.packageDeletePath),
+    loadJsonIfExists(template.packageDeletePath),
+  ];
+
+  for (const spec of deleteSpecs) {
+    if (spec) applyPackageDeleteSpec(pkg, spec);
+  }
+
+  const mergeSpecs = [
+    loadJsonIfExists(baseTemplateAssets.packageMergePath),
+    loadJsonIfExists(template.packageMergePath),
+  ];
+
+  for (const spec of mergeSpecs) {
+    if (spec) applyPackageMergeSpec(pkg, spec);
+  }
+
+  writePackageJson(pkgPath, pkg);
+  console.log('🔧 package.json 已更新');
+}
+
 async function runInteractiveInit() {
   const cwd = process.cwd();
   intro(chalk.cyan('🚀 create-biome 初始化'));
@@ -53,7 +82,32 @@ async function runInteractiveInit() {
     process.exit(1);
   }
 
-  // 2. 自动生成 ignore
+  const defaultTemplate = availableTemplates[0];
+  if (!defaultTemplate) {
+    cancel('当前缺少可用模板，请检查安装包。');
+    process.exit(1);
+  }
+
+  // 2. 选择模板
+  const templateAnswer = await select({
+    message: '选择项目模板',
+    options: availableTemplates.map((tpl) => ({ value: tpl.id, label: tpl.label })),
+    initialValue: defaultTemplate.id,
+  });
+
+  if (isCancel(templateAnswer)) {
+    cancel('👋 已取消');
+    process.exit(0);
+  }
+
+  if (typeof templateAnswer !== 'string') {
+    cancel('👋 已取消');
+    process.exit(0);
+  }
+
+  const selectedTemplate = getTemplateById(templateAnswer as TemplateId);
+
+  // 3. 自动生成 ignore
   const biomeIgnore = path.join(cwd, '.biomeignore');
   const gitIgnore = path.join(cwd, '.gitignore');
 
@@ -73,14 +127,15 @@ async function runInteractiveInit() {
     }
   }
 
-  // 3. 写入 .editorconfig
+  // 4. 写入 .editorconfig
   const editorConfigPath = path.join(cwd, '.editorconfig');
   if (!fs.existsSync(editorConfigPath)) {
+    const editorConfigContent = readEditorConfigTemplate(selectedTemplate);
     fs.writeFileSync(editorConfigPath, editorConfigContent);
     console.log(chalk.gray('📄 已创建 .editorconfig'));
   }
 
-  // 4. 包管理器选择
+  // 5. 包管理器选择
   const autoPM = detectPackageManager(cwd);
 
   const pm = await select({
@@ -94,7 +149,8 @@ async function runInteractiveInit() {
     process.exit(0);
   }
 
-  // 5. 写入 biome.json
+  // 6. 写入 biome.json
+  const biomeConfig = JSON.parse(fs.readFileSync(selectedTemplate.biomeTemplatePath, 'utf8'));
   const biomePath = path.join(cwd, 'biome.json');
   if (!fs.existsSync(biomePath)) {
     fs.writeFileSync(biomePath, JSON.stringify(biomeConfig, null, 2));
@@ -103,7 +159,12 @@ async function runInteractiveInit() {
     console.log('⚠️ biome.json 已存在，不覆盖');
   }
 
-  // 6. 安装依赖
+  // 7. 同步 package.json
+  updatePackageJsonWithTemplate(pkgPath, selectedTemplate);
+
+  removeDeleteMarkers(cwd, [baseTemplateAssets.templateDir, selectedTemplate.templateDir]);
+
+  // 8. 安装依赖
   const load = spinner();
   load.start(`安装 @biomejs/biome ...`);
   try {
@@ -113,7 +174,7 @@ async function runInteractiveInit() {
     load.stop('❌ 安装失败，请手动安装');
   }
 
-  // 7. 安装 CLI 平台包
+  // 9. 安装 CLI 平台包
   let cliPkg: string | null = null;
   const os = process.platform;
   const arch = process.arch;
@@ -133,18 +194,19 @@ async function runInteractiveInit() {
     }
   }
 
-  // 8. 注入 scripts
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  if (!pkg.scripts) {
-    pkg.scripts = {};
-  }
-  pkg.scripts.lint = 'biome check .';
-  pkg.scripts['lint:fix'] = 'biome format --write . && biome check --write .';
-
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-  console.log('🔧 package.json scripts 已添加');
-
   outro('🎉 create-biome 初始化完成');
+}
+
+function readEditorConfigTemplate(template: TemplateDefinition) {
+  const templatePaths = [template.editorConfigPath, baseTemplateAssets.editorConfigPath];
+
+  for (const filePath of templatePaths) {
+    if (!filePath) continue;
+    if (!fs.existsSync(filePath)) continue;
+    return fs.readFileSync(filePath, 'utf8');
+  }
+
+  throw new Error('缺少 editorconfig 模板，请检查安装包。');
 }
 
 // Commander 用于支持非交互模式

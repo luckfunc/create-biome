@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.7/schema.json",
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -15,7 +15,6 @@
     "indentWidth": 2
   },
   "javascript": {
-    "jsxRuntime": "reactClassic",
     "formatter": {
       "quoteStyle": "single"
     }
@@ -39,13 +38,11 @@
         "useOptionalChain": "off"
       },
       "correctness": {
-        "useUniqueElementIds": "off",
-        "useExhaustiveDependencies": "off"
+        "useUniqueElementIds": "off"
       },
       "suspicious": {
         "noTsIgnore": "off",
         "noExplicitAny": "off",
-        "noArrayIndexKey": "off",
         "noConfusingVoidType": "off",
         "noNonNullAssertedOptionalChain": "off",
         "noThenProperty": "off",
@@ -55,15 +52,6 @@
       "performance": {
         "noAccumulatingSpread": "off",
         "noDynamicNamespaceImportAccess": "off"
-      },
-      "a11y": {
-        "noLabelWithoutControl": "off",
-        "useFocusableInteractive": "off",
-        "useKeyWithClickEvents": "off",
-        "useSemanticElements": "off",
-        "noStaticElementInteractions": "off",
-        "useAriaPropsSupportedByRole": "off",
-        "useAriaPropsForRole": "off"
       }
     }
   },
