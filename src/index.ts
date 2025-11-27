@@ -186,8 +186,10 @@ async function runInteractiveInit() {
   }
 
   // 7. 同步 package.json
+  // TODO 更新完成后增加loading依赖
   updatePackageJsonWithTemplate(pkgPath, selectedTemplate);
 
+  // TODO 后续删除依赖的时候 也和161行保持一致 展示删除的文件
   removeDeleteMarkers(cwd, [baseTemplateAssets.templateDir, selectedTemplate.templateDir]);
 
   // 8. 安装依赖
