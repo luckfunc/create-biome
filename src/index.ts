@@ -4,9 +4,9 @@ import { intro, outro, select, confirm, isCancel, spinner, cancel } from '@clack
 import chalk from 'chalk';
 import { Command } from 'commander';
 import fs from 'fs';
-import path, { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import path from 'path';
+import { promisify } from 'util';
+import { exec } from 'child_process';
 import { availableTemplates, baseTemplateAssets, getTemplateById } from './templates.ts';
 import type { TemplateDefinition, TemplateId } from './templates.ts';
 import { removeDeleteMarkers } from './utils/deleteMarkers.ts';
@@ -18,7 +18,7 @@ import {
   writePackageJson,
 } from './utils/packageJson.ts';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const execAsync = promisify(exec);
 
 function detectPackageManager(cwd: string) {
   if (fs.existsSync(path.join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
@@ -53,12 +53,13 @@ function getDevInstallCommand(pm: string, packages: string[]) {
   }
 }
 
-function installDevDependencies(pm: string, packages: string[], label: string) {
+async function installDevDependencies(pm: string, packages: string[], label: string) {
   const command = getDevInstallCommand(pm, packages);
   const load = spinner();
+
   load.start(`安装 ${label} ...`);
   try {
-    execSync(command, { stdio: 'ignore' });
+    await execAsync(command);
     load.stop(`📦 已安装 ${label}`);
   } catch {
     load.stop(`❌ 安装 ${label} 失败，请手动执行：${command}`);
@@ -193,7 +194,7 @@ async function initBiome() {
   removeDeleteMarkers(cwd, [baseTemplateAssets.templateDir, selectedTemplate.templateDir]);
 
   // 8. 安装依赖
-  installDevDependencies(pm, ['@biomejs/biome'], '@biomejs/biome');
+  await installDevDependencies(pm, ['@biomejs/biome'], '@biomejs/biome');
 
   outro('🎉 create-biome 初始化完成');
 }
