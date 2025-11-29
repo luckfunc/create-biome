@@ -103,14 +103,14 @@ async function initBiome() {
   const projectDir = process.cwd();
   intro(chalk.cyan('🚀 create-biome 初始化'));
 
-  // 0. 确认目录
+  // 1. 确认目录
   const confirmInitDir = await confirm({ message: `在目录：${projectDir} 初始化？` });
   if (isCancel(confirmInitDir) || confirmInitDir === false) {
     cancel('👋 已取消');
     process.exit(0);
   }
 
-  // 1. package.json
+  // 2. package.json
   const pkgJsonPath = path.join(projectDir, 'package.json');
   if (!fs.existsSync(pkgJsonPath)) {
     cancel(`当前目录缺少 package.json`);
@@ -123,7 +123,7 @@ async function initBiome() {
     process.exit(1);
   }
 
-  // 2. 模板选择
+  // 3. 选择模板
   const selectedTemplateId = await select({
     message: '选择项目模板',
     options: availableTemplates.map((tpl) => ({ value: tpl.id, label: tpl.label })),
@@ -142,7 +142,7 @@ async function initBiome() {
 
   const template = getTemplateById(selectedTemplateId as TemplateId);
 
-  // 3. ignore 文件
+  // 4. 创建ignore 文件
   const biomeIgnorePath = path.join(projectDir, '.biomeignore');
   const gitIgnorePath = path.join(projectDir, '.gitignore');
 
@@ -162,7 +162,7 @@ async function initBiome() {
     }
   }
 
-  // 4. editorconfig
+  // 5. 覆盖editorconfig
   const editorConfigFile = path.join(projectDir, '.editorconfig');
   if (!fs.existsSync(editorConfigFile)) {
     const editorConfigContent = loadEditorConfigTemplate(template);
@@ -170,7 +170,7 @@ async function initBiome() {
     console.log(chalk.gray('📄 已创建 .editorconfig'));
   }
 
-  // 5. 选择包管理器
+  // 6. 选择包管理器
   const detectedPM = detectPackageManagerFromDir(projectDir);
 
   const packageManager = await select({
@@ -184,7 +184,7 @@ async function initBiome() {
     process.exit(0);
   }
 
-  // 6. biome.json
+  // 7. 创建biome.json
   const biomeJson = JSON.parse(fs.readFileSync(template.biomeTemplatePath, 'utf8'));
   const biomeJsonPath = path.join(projectDir, 'biome.json');
   if (!fs.existsSync(biomeJsonPath)) {
@@ -194,13 +194,13 @@ async function initBiome() {
     console.log('⚠️ biome.json 已存在，不覆盖');
   }
 
-  // 7. 同步 package.json
+  // 8. 同步 package.json
   applyTemplateToPackageJson(pkgJsonPath, template);
 
   // 清理模板标记
   cleanupTemplateMarkers(projectDir, [baseTemplateAssets.templateDir, template.templateDir]);
 
-  // 8. 安装依赖
+  // 8. 开始安装依赖
   await installDevPackages(packageManager, ['@biomejs/biome'], '@biomejs/biome');
 
   outro('🎉 create-biome 初始化完成');
