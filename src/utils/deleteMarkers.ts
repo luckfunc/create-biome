@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 
-export function removeDeleteMarkers(targetDir: string, templateDirs: string[]) {
+export function cleanupTemplateMarkers(targetDir: string, templateDirs: string[]) {
   const deletedPaths = new Set<string>();
   const markerSuffix = '.delete';
 

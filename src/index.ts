@@ -9,7 +9,7 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import { availableTemplates, baseTemplateAssets, getTemplateById } from './templates.ts';
 import type { TemplateDefinition, TemplateId } from './templates.ts';
-import { removeDeleteMarkers } from './utils/deleteMarkers.ts';
+import { cleanupTemplateMarkers } from './utils/deleteMarkers.ts';
 import {
   applyPackageDeleteSpec,
   applyPackageMergeSpec,
@@ -18,30 +18,38 @@ import {
   writePackageJson,
 } from './utils/packageJson.ts';
 
-const execAsync = promisify(exec);
+const runCommandAsync = promisify(exec);
 
-function detectPackageManager(cwd: string) {
-  if (fs.existsSync(path.join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
-  if (fs.existsSync(path.join(cwd, 'yarn.lock'))) return 'yarn';
-  if (fs.existsSync(path.join(cwd, 'bun.lockb'))) return 'bun';
-  if (fs.existsSync(path.join(cwd, 'package-lock.json'))) return 'npm';
+function detectPackageManagerFromDir(projectDir: string) {
+  if (fs.existsSync(path.join(projectDir, 'pnpm-lock.yaml'))) {
+    return 'pnpm';
+  }
+  if (fs.existsSync(path.join(projectDir, 'yarn.lock'))) {
+    return 'yarn';
+  }
+  if (fs.existsSync(path.join(projectDir, 'bun.lockb'))) {
+    return 'bun';
+  }
+  if (fs.existsSync(path.join(projectDir, 'package-lock.json'))) {
+    return 'npm';
+  }
   return 'npm';
 }
 
-function getPackageManagerOptions(autoPM: string) {
-  const all = ['pnpm', 'npm', 'yarn', 'bun'];
+function buildPackageManagerChoices(detectedPM: string) {
+  const allManagers = ['pnpm', 'npm', 'yarn', 'bun'];
 
-  const sorted = [autoPM, ...all.filter((pm) => pm !== autoPM)];
+  const sortedManagers = [detectedPM, ...allManagers.filter((pm) => pm !== detectedPM)];
 
-  return sorted.map((pm) => ({
+  return sortedManagers.map((pm) => ({
     value: pm,
-    label: pm === autoPM ? chalk.green(`✔ ${pm}（自动识别，回车默认选择）`) : pm,
+    label: pm === detectedPM ? chalk.green(`✔ ${pm}（自动识别，回车默认选择）`) : pm,
   }));
 }
 
-function getDevInstallCommand(pm: string, packages: string[]) {
+function buildDevInstallCommand(packageManager: string, packages: string[]) {
   const pkgList = packages.join(' ');
-  switch (pm) {
+  switch (packageManager) {
     case 'npm':
       return `npm install --save-dev ${pkgList}`;
     case 'yarn':
@@ -53,20 +61,20 @@ function getDevInstallCommand(pm: string, packages: string[]) {
   }
 }
 
-async function installDevDependencies(pm: string, packages: string[], label: string) {
-  const command = getDevInstallCommand(pm, packages);
+async function installDevPackages(packageManager: string, packages: string[], label: string) {
+  const command = buildDevInstallCommand(packageManager, packages);
   const load = spinner();
 
   load.start(`安装 ${label} ...`);
   try {
-    await execAsync(command);
+    await runCommandAsync(command);
     load.stop(`📦 已安装 ${label}`);
   } catch {
     load.stop(`❌ 安装 ${label} 失败，请手动执行：${command}`);
   }
 }
 
-function updatePackageJsonWithTemplate(pkgPath: string, template: TemplateDefinition) {
+function applyTemplateToPackageJson(pkgPath: string, template: TemplateDefinition) {
   const pkg = readPackageJson(pkgPath);
 
   const deleteSpecs = [
@@ -92,114 +100,113 @@ function updatePackageJsonWithTemplate(pkgPath: string, template: TemplateDefini
 }
 
 async function initBiome() {
-  const cwd = process.cwd();
+  const projectDir = process.cwd();
   intro(chalk.cyan('🚀 create-biome 初始化'));
 
   // 0. 确认目录
-  const dirConfirm = await confirm({ message: `在目录：${cwd} 初始化？` });
-  if (isCancel(dirConfirm) || dirConfirm === false) {
+  const confirmInitDir = await confirm({ message: `在目录：${projectDir} 初始化？` });
+  if (isCancel(confirmInitDir) || confirmInitDir === false) {
     cancel('👋 已取消');
     process.exit(0);
   }
 
-  // 1. 检查 package.json
-  const pkgPath = path.join(cwd, 'package.json');
-  if (!fs.existsSync(pkgPath)) {
+  // 1. package.json
+  const pkgJsonPath = path.join(projectDir, 'package.json');
+  if (!fs.existsSync(pkgJsonPath)) {
     cancel(`当前目录缺少 package.json`);
     process.exit(1);
   }
 
-  const defaultTemplate = availableTemplates[0];
-  if (!defaultTemplate) {
+  const fallbackTemplate = availableTemplates[0];
+  if (!fallbackTemplate) {
     cancel('当前缺少可用模板，请检查安装包。');
     process.exit(1);
   }
 
-  // 2. 选择模板
-  const templateAnswer = await select({
+  // 2. 模板选择
+  const selectedTemplateId = await select({
     message: '选择项目模板',
     options: availableTemplates.map((tpl) => ({ value: tpl.id, label: tpl.label })),
-    initialValue: defaultTemplate.id,
+    initialValue: fallbackTemplate.id,
   });
 
-  if (isCancel(templateAnswer)) {
+  if (isCancel(selectedTemplateId)) {
     cancel('👋 已取消');
     process.exit(0);
   }
 
-  if (typeof templateAnswer !== 'string') {
+  if (typeof selectedTemplateId !== 'string') {
     cancel('👋 已取消');
     process.exit(0);
   }
 
-  const selectedTemplate = getTemplateById(templateAnswer as TemplateId);
+  const template = getTemplateById(selectedTemplateId as TemplateId);
 
-  // 3. 自动生成 ignore
-  const biomeIgnore = path.join(cwd, '.biomeignore');
-  const gitIgnore = path.join(cwd, '.gitignore');
+  // 3. ignore 文件
+  const biomeIgnorePath = path.join(projectDir, '.biomeignore');
+  const gitIgnorePath = path.join(projectDir, '.gitignore');
 
-  if (!fs.existsSync(biomeIgnore)) {
-    fs.writeFileSync(biomeIgnore, '# Created by create-biome\n');
+  if (!fs.existsSync(biomeIgnorePath)) {
+    fs.writeFileSync(biomeIgnorePath, '# Created by create-biome\n');
     console.log(chalk.gray('📄 已创建 .biomeignore'));
   }
 
-  if (!fs.existsSync(gitIgnore)) {
-    fs.writeFileSync(gitIgnore, '# Created by create-biome\n.biomeignore\n');
+  if (!fs.existsSync(gitIgnorePath)) {
+    fs.writeFileSync(gitIgnorePath, '# Created by create-biome\n.biomeignore\n');
     console.log(chalk.gray('📄 已创建 .gitignore'));
   } else {
-    const gitIgnoreContent = fs.readFileSync(gitIgnore, 'utf8');
+    const gitIgnoreContent = fs.readFileSync(gitIgnorePath, 'utf8');
     if (!gitIgnoreContent.includes('.biomeignore')) {
-      fs.appendFileSync(gitIgnore, '\n# Create Biome\n.biomeignore\n');
+      fs.appendFileSync(gitIgnorePath, '\n# Create Biome\n.biomeignore\n');
       console.log(chalk.gray('📄 已向 .gitignore 添加 .biomeignore 记录'));
     }
   }
 
-  // 4. 写入 .editorconfig
-  const editorConfigPath = path.join(cwd, '.editorconfig');
-  if (!fs.existsSync(editorConfigPath)) {
-    const editorConfigContent = readEditorConfigTemplate(selectedTemplate);
-    fs.writeFileSync(editorConfigPath, editorConfigContent);
+  // 4. editorconfig
+  const editorConfigFile = path.join(projectDir, '.editorconfig');
+  if (!fs.existsSync(editorConfigFile)) {
+    const editorConfigContent = loadEditorConfigTemplate(template);
+    fs.writeFileSync(editorConfigFile, editorConfigContent);
     console.log(chalk.gray('📄 已创建 .editorconfig'));
   }
 
-  // 5. 包管理器选择
-  const autoPM = detectPackageManager(cwd);
+  // 5. 选择包管理器
+  const detectedPM = detectPackageManagerFromDir(projectDir);
 
-  const pm = await select({
+  const packageManager = await select({
     message: '选择包管理器',
-    options: getPackageManagerOptions(autoPM),
-    initialValue: autoPM,
+    options: buildPackageManagerChoices(detectedPM),
+    initialValue: detectedPM,
   });
 
-  if (isCancel(pm)) {
+  if (isCancel(packageManager)) {
     cancel('👋 已取消');
     process.exit(0);
   }
 
-  // 6. 写入 biome.json
-  const biomeConfig = JSON.parse(fs.readFileSync(selectedTemplate.biomeTemplatePath, 'utf8'));
-  const biomePath = path.join(cwd, 'biome.json');
-  if (!fs.existsSync(biomePath)) {
-    fs.writeFileSync(biomePath, JSON.stringify(biomeConfig, null, 2));
+  // 6. biome.json
+  const biomeJson = JSON.parse(fs.readFileSync(template.biomeTemplatePath, 'utf8'));
+  const biomeJsonPath = path.join(projectDir, 'biome.json');
+  if (!fs.existsSync(biomeJsonPath)) {
+    fs.writeFileSync(biomeJsonPath, JSON.stringify(biomeJson, null, 2));
     console.log('✨ 已创建 biome.json');
   } else {
     console.log('⚠️ biome.json 已存在，不覆盖');
   }
 
   // 7. 同步 package.json
-  // TODO 更新完成后增加loading依赖
-  updatePackageJsonWithTemplate(pkgPath, selectedTemplate);
+  applyTemplateToPackageJson(pkgJsonPath, template);
 
-  // TODO 后续删除依赖的时候 也和161行保持一致 展示删除的文件
-  removeDeleteMarkers(cwd, [baseTemplateAssets.templateDir, selectedTemplate.templateDir]);
+  // 清理模板标记
+  cleanupTemplateMarkers(projectDir, [baseTemplateAssets.templateDir, template.templateDir]);
 
   // 8. 安装依赖
-  await installDevDependencies(pm, ['@biomejs/biome'], '@biomejs/biome');
+  await installDevPackages(packageManager, ['@biomejs/biome'], '@biomejs/biome');
 
   outro('🎉 create-biome 初始化完成');
 }
 
-function readEditorConfigTemplate(template: TemplateDefinition) {
+function loadEditorConfigTemplate(template: TemplateDefinition) {
   const templatePaths = [template.editorConfigPath, baseTemplateAssets.editorConfigPath];
 
   for (const filePath of templatePaths) {
