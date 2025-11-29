@@ -90,7 +90,7 @@ function updatePackageJsonWithTemplate(pkgPath: string, template: TemplateDefini
   console.log('🔧 package.json 已更新');
 }
 
-async function runInteractiveInit() {
+async function initBiome() {
   const cwd = process.cwd();
   intro(chalk.cyan('🚀 create-biome 初始化'));
 
@@ -215,9 +215,9 @@ const program = new Command();
 
 program.name('create-biome').description('统一初始化 biome 配置');
 
-program.command('init').description('交互式初始化').action(runInteractiveInit);
+program.command('init').description('交互式初始化').action(initBiome);
 
 // 默认执行 init
-program.action(runInteractiveInit);
+program.action(initBiome);
 
 program.parse(process.argv);
