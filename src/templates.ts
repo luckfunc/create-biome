@@ -8,6 +8,7 @@ export interface TemplateDefinition {
   id: TemplateId;
   label: string;
   biomeTemplatePath: string;
+  isDefault: boolean;
   templateDir: string;
   packageMergePath?: string;
   packageDeletePath?: string;
@@ -32,6 +33,7 @@ export const availableTemplates: TemplateDefinition[] = [
   {
     id: 'react',
     label: 'React / JSX 项目',
+    isDefault: true,
     biomeTemplatePath: path.join(templateRoot, 'react', 'biome.template.json'),
     templateDir: path.join(templateRoot, 'react'),
     packageMergePath: resolvePathSafe(path.join(templateRoot, 'react', 'package.merge.json')),
@@ -41,6 +43,7 @@ export const availableTemplates: TemplateDefinition[] = [
   {
     id: 'javascript',
     label: 'JavaScript / Node.js 项目',
+    isDefault: false,
     biomeTemplatePath: path.join(templateRoot, 'javascript', 'biome.template.json'),
     templateDir: path.join(templateRoot, 'javascript'),
     packageMergePath: resolvePathSafe(path.join(templateRoot, 'javascript', 'package.merge.json')),
@@ -54,7 +57,7 @@ export const availableTemplates: TemplateDefinition[] = [
 ];
 
 export function getTemplateById(id: TemplateId): TemplateDefinition {
-  const template = availableTemplates.find((tpl) => tpl.id === id);
+  const template = availableTemplates.find((template) => template.id === id);
   if (!template) {
     throw new Error(`Unknown template: ${id}`);
   }

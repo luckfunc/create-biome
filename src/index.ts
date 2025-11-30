@@ -117,30 +117,31 @@ async function initBiome() {
     process.exit(1);
   }
 
-  const fallbackTemplate = availableTemplates[0];
-  if (!fallbackTemplate) {
+  // 默认选择react模板
+  const defaultTemplate = availableTemplates.find((template) => template.isDefault);
+  if (!defaultTemplate) {
     cancel('当前缺少可用模板，请检查安装包。');
     process.exit(1);
   }
 
   // 3. 选择模板
-  const selectedTemplateId = await select({
+  const selectedTemplate = await select({
     message: '选择项目模板',
-    options: availableTemplates.map((tpl) => ({ value: tpl.id, label: tpl.label })),
-    initialValue: fallbackTemplate.id,
+    options: availableTemplates.map((template) => ({ value: template.id, label: template.label })),
+    initialValue: defaultTemplate.id,
   });
 
-  if (isCancel(selectedTemplateId)) {
+  if (isCancel(selectedTemplate)) {
     cancel('👋 已取消');
     process.exit(0);
   }
 
-  if (typeof selectedTemplateId !== 'string') {
+  if (typeof selectedTemplate !== 'string') {
     cancel('👋 已取消');
     process.exit(0);
   }
 
-  const template = getTemplateById(selectedTemplateId as TemplateId);
+  const template = getTemplateById(selectedTemplate as TemplateId);
 
   // 4. 创建ignore 文件
   const biomeIgnorePath = path.join(projectDir, '.biomeignore');
