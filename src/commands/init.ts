@@ -20,6 +20,7 @@ import {
 
 function applyTemplateToPackageJson(pkgPath: string, template: TemplateDefinition) {
   const pkg = readPackageJson(pkgPath);
+  const removedEntries: string[] = [];
 
   const deleteSpecs = [
     loadJsonIfExists(baseTemplateAssets.packageDeletePath),
@@ -27,9 +28,9 @@ function applyTemplateToPackageJson(pkgPath: string, template: TemplateDefinitio
   ];
 
   for (const spec of deleteSpecs) {
-    if (spec) {
-      applyPackageDeleteSpec(pkg, spec);
-    }
+    if (!spec) continue;
+    const removed = applyPackageDeleteSpec(pkg, spec);
+    removedEntries.push(...removed);
   }
 
   const mergeSpecs = [
@@ -44,6 +45,10 @@ function applyTemplateToPackageJson(pkgPath: string, template: TemplateDefinitio
   }
 
   writePackageJson(pkgPath, pkg);
+  if (removedEntries.length > 0) {
+    const uniqueRemoved = [...new Set(removedEntries)];
+    console.log(chalk.yellow(`🧹 package.json 已移除：${uniqueRemoved.join(', ')}`));
+  }
   console.log('🔧 package.json 已更新');
 }
 
@@ -71,11 +76,14 @@ function ensureIgnoreFiles(projectDir: string) {
 
 function ensureEditorConfig(projectDir: string, template: TemplateDefinition) {
   const editorConfigFile = path.join(projectDir, '.editorconfig');
-  if (fs.existsSync(editorConfigFile)) return;
-
+  const existed = fs.existsSync(editorConfigFile);
   const editorConfigContent = loadEditorConfigTemplate(template);
   fs.writeFileSync(editorConfigFile, editorConfigContent);
-  console.log(chalk.gray('📄 已创建 .editorconfig'));
+  if (existed) {
+    console.log(chalk.yellow('⚠️ 已覆盖现有 .editorconfig'));
+  } else {
+    console.log(chalk.gray('📄 已创建 .editorconfig'));
+  }
 }
 
 function createBiomeConfig(projectDir: string, template: TemplateDefinition) {

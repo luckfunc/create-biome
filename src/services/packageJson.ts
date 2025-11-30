@@ -26,28 +26,44 @@ export function loadJsonIfExists(filePath?: string): JsonObject | null {
   return JSON.parse(raw);
 }
 
-export function applyPackageDeleteSpec(target: JsonObject, spec: JsonObject) {
-  applyDeleteRecursively(target, spec);
+export function applyPackageDeleteSpec(target: JsonObject, spec: JsonObject): string[] {
+  return applyDeleteRecursively(target, spec, []);
 }
 
 export function applyPackageMergeSpec(target: JsonObject, spec: JsonObject) {
   applyMergeRecursively(target, spec);
 }
 
-function applyDeleteRecursively(target: JsonObject, spec: JsonObject) {
+function applyDeleteRecursively(
+  target: JsonObject,
+  spec: JsonObject,
+  segments: string[],
+): string[] {
+  const removedPaths: string[] = [];
+
   for (const [key, value] of Object.entries(spec)) {
+    const pathSegments = [...segments, key];
+    const currentPath = formatJsonPath(pathSegments);
     if (value === null) {
-      delete target[key];
+      if (Object.hasOwn(target, key)) {
+        delete target[key];
+        removedPaths.push(currentPath);
+      }
       continue;
     }
 
     if (isPlainObject(value) && isPlainObject(target[key])) {
-      applyDeleteRecursively(target[key] as JsonObject, value);
-      if (isEmptyObject(target[key] as JsonObject)) {
+      const nestedRemoved = applyDeleteRecursively(target[key] as JsonObject, value, pathSegments);
+      removedPaths.push(...nestedRemoved);
+      const targetHasKey = Object.hasOwn(target, key);
+      if (targetHasKey && isEmptyObject(target[key] as JsonObject)) {
         delete target[key];
+        removedPaths.push(currentPath);
       }
     }
   }
+
+  return removedPaths;
 }
 
 function applyMergeRecursively(target: JsonObject, spec: JsonObject) {
@@ -70,4 +86,18 @@ function isPlainObject(value: unknown): value is JsonObject {
 
 function isEmptyObject(value: JsonObject) {
   return Object.keys(value).length === 0;
+}
+
+function formatJsonPath(segments: string[]) {
+  const identifierPattern = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+  return segments
+    .map((segment, index) => {
+      const isIdentifier = identifierPattern.test(segment);
+      if (index === 0) {
+        return isIdentifier ? segment : `[${JSON.stringify(segment)}]`;
+      }
+
+      return isIdentifier ? `.${segment}` : `[${JSON.stringify(segment)}]`;
+    })
+    .join('');
 }
