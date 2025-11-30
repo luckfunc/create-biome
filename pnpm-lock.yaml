@@ -9,10 +9,7 @@ importers:
   .:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.3.7
-        version: 2.3.8
-      '@biomejs/cli-darwin-arm64':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: 2.3.8
       '@clack/prompts':
         specifier: ^0.11.0
@@ -459,7 +456,8 @@ snapshots:
       '@biomejs/cli-win32-arm64': 2.3.8
       '@biomejs/cli-win32-x64': 2.3.8
 
-  '@biomejs/cli-darwin-arm64@2.3.8': {}
+  '@biomejs/cli-darwin-arm64@2.3.8':
+    optional: true
 
   '@biomejs/cli-darwin-x64@2.3.8':
     optional: true

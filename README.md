@@ -17,6 +17,13 @@ npx create-biome
 
 执行过程中会通过终端交互确认目标目录与包管理器，其余步骤全自动完成。默认会在未检测到的情况下创建 `.biomeignore`、`.gitignore`（附带 `.biomeignore` 记录）和 `.editorconfig`。
 
+## 环境要求
+
+- Node.js 18 或更高版本。当前依赖（如 `commander@14`、`chalk@5`、`@clack/prompts`）只在 Node 18+ 上提供官方支持，因此旧版 Node（14/16）无法运行 create-biome。
+- 已安装任一包管理器（pnpm/npm/yarn/bun）用于安装 `@biomejs/biome`。
+
+> ⚠️ **注意：** CLI 会直接修改项目文件（覆盖 `.editorconfig`、写入 `biome.json`、同步 `.gitignore`、删除 `package.json` 中的 ESLint/Prettier 等配置）。请在执行前确认目标目录，并根据输出提示检查变更。
+
 ## 开发 & 构建
 
 项目使用 pnpm，如需修改 CLI 逻辑：
@@ -52,13 +59,3 @@ pnpm lint   # 运行 Biome 检查
 ## 许可证
 
 MIT
-
-## TODO
-
-- 适配 Node 14/16 等低版本环境，去除或降级仍旧不兼容的语法特性。
-- 修复低版本 Node 安装依赖时可能出现的异常（例如 CLI 平台包识别失败或 execSync 权限问题）。
-- 在至少 20 个真实项目中跑通 `create-biome` 全流程，记录结果并完善文档。
-- 在下载安装依赖的时候 cli缺少loading效果。
-- 在安装biome时，删除eslint和prettier依赖。
-- 支持多项目模板 如react,nodeJs
-- 支持biome import配置
