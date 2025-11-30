@@ -16,8 +16,12 @@ export function writePackageJson(pkgPath: string, pkg: PackageJson) {
 }
 
 export function loadJsonIfExists(filePath?: string): JsonObject | null {
-  if (!filePath) return null;
-  if (!fs.existsSync(filePath)) return null;
+  if (!filePath) {
+    return null;
+  }
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
   const raw = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(raw);
 }

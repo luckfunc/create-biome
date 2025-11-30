@@ -1,22 +1,12 @@
 import fs from 'fs';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-
-export type TemplateId = 'react' | 'javascript';
-
-export interface TemplateDefinition {
-  id: TemplateId;
-  label: string;
-  biomeTemplatePath: string;
-  isDefault: boolean;
-  templateDir: string;
-  packageMergePath?: string;
-  packageDeletePath?: string;
-  editorConfigPath?: string;
-}
+import type { TemplateDefinition, TemplateId } from '../types.ts';
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
-const templateRoot = path.join(moduleDir, 'template');
+const templateRoot = fs.existsSync(path.join(moduleDir, 'base'))
+  ? moduleDir
+  : path.join(moduleDir, 'template');
 
 export const baseTemplateAssets = {
   templateDir: path.join(templateRoot, 'base'),
