@@ -5,7 +5,12 @@ import path from 'path';
 import { availableTemplates, baseTemplateAssets, getTemplateById } from '../template/index.ts';
 import type { TemplateDefinition, TemplateId } from '../types.ts';
 import { cleanupTemplateMarkers } from '../services/templateCleanup.ts';
-import { applyPackageMergeSpec, loadJsonIfExists, readPackageJson, writePackageJson } from '../services/packageJson.ts';
+import {
+  applyPackageMergeSpec,
+  loadJsonIfExists,
+  readPackageJson,
+  writePackageJson,
+} from '../services/packageJson.ts';
 import {
   buildPackageManagerChoices,
   detectPackageManager,
