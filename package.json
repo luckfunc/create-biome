@@ -1,6 +1,6 @@
 {
   "name": "create-biome",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "bin": {
     "create-biome": "./dist/index.mjs"
   },

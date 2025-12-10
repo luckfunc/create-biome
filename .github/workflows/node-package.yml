@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18.20.8
+          node-version: 20
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
@@ -48,7 +48,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-
+        ## 使用OIDC 必须大于11.5.1 否则会404
       - name: Publish to npm via OIDC
         run: npm publish --provenance
 
