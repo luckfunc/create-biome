@@ -22,8 +22,6 @@ npx create-biome
 - Node.js 18 或更高版本。当前依赖（如 `commander@14`、`chalk@5`、`@clack/prompts`）只在 Node 18+ 上提供官方支持，因此旧版 Node（14/16）无法运行 create-biome。
 - 已安装任一包管理器（pnpm/npm/yarn/bun）用于安装 `@biomejs/biome`。
 
-> ⚠️ **注意：** CLI 会直接修改项目文件（覆盖 `.editorconfig`、写入 `biome.json`、同步 `.gitignore`、删除 `package.json` 中的 ESLint/Prettier 等配置）。请在执行前确认目标目录，并根据输出提示检查变更。
-
 ## 开发 & 构建
 
 项目使用 pnpm，如需修改 CLI 逻辑：
