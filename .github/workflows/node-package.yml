@@ -41,11 +41,10 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
-          always-auth: true   # ✅ OIDC 必须
+          always-auth: true
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - run: pnpm whoami
 
 
       - name: Publish to npm via OIDC
