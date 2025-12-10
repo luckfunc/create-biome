@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,38 +19,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - run: node -v
+      - run: npm -v
+
+      # 升级 npm，确保 >= 11.5.1
+      - run: npm install -g npm@latest
+      - run: npm -v
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
       - run: pnpm run build
 
-  publish-npm:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org/
-          always-auth: true
-
-      - run: node -v
-      - run: npm -v
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-        ## 使用OIDC 必须大于11.5.1 否则会404
       - name: Publish to npm via OIDC
         run: npm publish --provenance
-
-
