@@ -33,5 +33,8 @@
     "url": "https://github.com/luckfunc/create-biome.git"
   },
   "funding": "https://github.com/sponsors/luckfunc",
-  "homepage": "https://github.com/luckfunc/create-biome#readme"
+  "homepage": "https://github.com/luckfunc/create-biome#readme",
+  "volta": {
+    "node": "18.20.8"
+  }
 }
