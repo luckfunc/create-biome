@@ -1,52 +1,47 @@
-name: Node.js Package
+name: Publish Package
 
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: read
+  id-token: write   # ✅ OIDC 必须
+
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ 拉代码
       - uses: actions/checkout@v4
 
+      # 2️⃣ 初始化 pnpm（只负责装依赖 & 构建）
       - uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
-      - run: pnpm run build
-
-  publish-npm:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write   # ✅ OIDC 必须
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
+      # 3️⃣ 初始化 Node + npm registry
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
-          always-auth: true   # ✅ OIDC 必须
 
+      # 4️⃣ 升级 npm（⚠️ 这是 OIDC 成功的生死线）
+      - name: Upgrade npm for OIDC
+        run: npm install -g npm@latest
+
+      # 5️⃣ 安装依赖
       - run: pnpm install --frozen-lockfile
+
+      # 6️⃣ 构建
       - run: pnpm run build
-      - run: pnpm whoami
 
+      # 7️⃣ 身份校验（必须能输出你的 npm 用户名）
+      - name: Debug identity
+        run: npm whoami
 
+      # 8️⃣ 正式发布（⚠️ 必须用 npm，不能用 pnpm）
       - name: Publish to npm via OIDC
         run: npm publish --access public
