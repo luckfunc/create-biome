@@ -45,6 +45,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+      - run: pnpm whoami
+
 
       - name: Publish to npm via OIDC
         run: npm publish --access public
