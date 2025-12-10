@@ -5,13 +5,7 @@ import path from 'path';
 import { availableTemplates, baseTemplateAssets, getTemplateById } from '../template/index.ts';
 import type { TemplateDefinition, TemplateId } from '../types.ts';
 import { cleanupTemplateMarkers } from '../services/templateCleanup.ts';
-import {
-  applyPackageDeleteSpec,
-  applyPackageMergeSpec,
-  loadJsonIfExists,
-  readPackageJson,
-  writePackageJson,
-} from '../services/packageJson.ts';
+import { applyPackageMergeSpec, loadJsonIfExists, readPackageJson, writePackageJson } from '../services/packageJson.ts';
 import {
   buildPackageManagerChoices,
   detectPackageManager,
@@ -20,18 +14,6 @@ import {
 
 function applyTemplateToPackageJson(pkgPath: string, template: TemplateDefinition) {
   const pkg = readPackageJson(pkgPath);
-  const removedEntries: string[] = [];
-
-  const deleteSpecs = [
-    loadJsonIfExists(baseTemplateAssets.packageDeletePath),
-    loadJsonIfExists(template.packageDeletePath),
-  ];
-
-  for (const spec of deleteSpecs) {
-    if (!spec) continue;
-    const removed = applyPackageDeleteSpec(pkg, spec);
-    removedEntries.push(...removed);
-  }
 
   const mergeSpecs = [
     loadJsonIfExists(baseTemplateAssets.packageMergePath),
@@ -45,10 +27,6 @@ function applyTemplateToPackageJson(pkgPath: string, template: TemplateDefinitio
   }
 
   writePackageJson(pkgPath, pkg);
-  if (removedEntries.length > 0) {
-    const uniqueRemoved = [...new Set(removedEntries)];
-    console.log(chalk.yellow(`🧹 package.json 已移除：${uniqueRemoved.join(', ')}`));
-  }
   console.log('🔧 package.json 已更新');
 }
 

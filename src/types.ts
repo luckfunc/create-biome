@@ -9,6 +9,5 @@ export interface TemplateDefinition {
   isDefault: boolean;
   templateDir: string;
   packageMergePath?: string;
-  packageDeletePath?: string;
   editorConfigPath?: string;
 }

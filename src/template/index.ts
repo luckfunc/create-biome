@@ -11,7 +11,6 @@ const templateRoot = fs.existsSync(path.join(moduleDir, 'base'))
 export const baseTemplateAssets = {
   templateDir: path.join(templateRoot, 'base'),
   packageMergePath: path.join(templateRoot, 'base', 'package.merge.json'),
-  packageDeletePath: path.join(templateRoot, 'base', 'package.delete.json'),
   editorConfigPath: path.join(templateRoot, 'base', 'editorconfig.template'),
 };
 
@@ -27,7 +26,6 @@ export const availableTemplates: TemplateDefinition[] = [
     biomeTemplatePath: path.join(templateRoot, 'react', 'biome.template.json'),
     templateDir: path.join(templateRoot, 'react'),
     packageMergePath: resolvePathSafe(path.join(templateRoot, 'react', 'package.merge.json')),
-    packageDeletePath: resolvePathSafe(path.join(templateRoot, 'react', 'package.delete.json')),
     editorConfigPath: resolvePathSafe(path.join(templateRoot, 'react', 'editorconfig.template')),
   },
   {
@@ -37,9 +35,6 @@ export const availableTemplates: TemplateDefinition[] = [
     biomeTemplatePath: path.join(templateRoot, 'javascript', 'biome.template.json'),
     templateDir: path.join(templateRoot, 'javascript'),
     packageMergePath: resolvePathSafe(path.join(templateRoot, 'javascript', 'package.merge.json')),
-    packageDeletePath: resolvePathSafe(
-      path.join(templateRoot, 'javascript', 'package.delete.json'),
-    ),
     editorConfigPath: resolvePathSafe(
       path.join(templateRoot, 'javascript', 'editorconfig.template'),
     ),
