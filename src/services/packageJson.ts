@@ -6,9 +6,29 @@ export type PackageJson = JsonObject & {
   scripts?: Record<string, string>;
 };
 
+export function readJsonFile<T>(filePath: string): T {
+  let raw: string;
+
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    throw new Error(`Failed to read file: ${filePath}`, {
+      cause: error instanceof Error ? error : undefined,
+    });
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const message = error instanceof Error ? `：${error.message}` : '';
+    throw new Error(`Failed to parse JSON file: ${filePath}${message}`, {
+      cause: error instanceof Error ? error : undefined,
+    });
+  }
+}
+
 export function readPackageJson(pkgPath: string): PackageJson {
-  const raw = fs.readFileSync(pkgPath, 'utf8');
-  return JSON.parse(raw);
+  return readJsonFile<PackageJson>(pkgPath);
 }
 
 export function writePackageJson(pkgPath: string, pkg: PackageJson) {
@@ -22,8 +42,7 @@ export function loadJsonIfExists(filePath?: string): JsonObject | null {
   if (!fs.existsSync(filePath)) {
     return null;
   }
-  const raw = fs.readFileSync(filePath, 'utf8');
-  return JSON.parse(raw);
+  return readJsonFile<JsonObject>(filePath);
 }
 
 export function applyPackageMergeSpec(target: JsonObject, spec: JsonObject) {

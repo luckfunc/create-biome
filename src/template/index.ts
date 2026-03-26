@@ -21,7 +21,7 @@ function resolvePathSafe(filePath: string) {
 export const availableTemplates: TemplateDefinition[] = [
   {
     id: 'react',
-    label: 'React / JSX 项目',
+    label: 'React / JSX project',
     isDefault: true,
     biomeTemplatePath: path.join(templateRoot, 'react', 'biome.template.json'),
     templateDir: path.join(templateRoot, 'react'),
@@ -30,7 +30,7 @@ export const availableTemplates: TemplateDefinition[] = [
   },
   {
     id: 'javascript',
-    label: 'JavaScript / Node.js 项目',
+    label: 'JavaScript / Node.js project',
     isDefault: false,
     biomeTemplatePath: path.join(templateRoot, 'javascript', 'biome.template.json'),
     templateDir: path.join(templateRoot, 'javascript'),

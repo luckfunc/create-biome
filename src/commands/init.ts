@@ -8,6 +8,7 @@ import { cleanupTemplateMarkers } from '../services/templateCleanup.ts';
 import {
   applyPackageMergeSpec,
   loadJsonIfExists,
+  readJsonFile,
   readPackageJson,
   writePackageJson,
 } from '../services/packageJson.ts';
@@ -32,7 +33,7 @@ function applyTemplateToPackageJson(pkgPath: string, template: TemplateDefinitio
   }
 
   writePackageJson(pkgPath, pkg);
-  console.log('🔧 package.json 已更新');
+  console.log('🔧 Updated package.json');
 }
 
 function ensureIgnoreFiles(projectDir: string) {
@@ -41,43 +42,43 @@ function ensureIgnoreFiles(projectDir: string) {
 
   if (!fs.existsSync(biomeIgnorePath)) {
     fs.writeFileSync(biomeIgnorePath, '# Created by create-biome\n');
-    console.log(chalk.gray('📄 已创建 .biomeignore'));
+    console.log(chalk.gray('📄 Created .biomeignore'));
   }
 
   if (!fs.existsSync(gitIgnorePath)) {
     fs.writeFileSync(gitIgnorePath, '# Created by create-biome\n.biomeignore\n');
-    console.log(chalk.gray('📄 已创建 .gitignore'));
+    console.log(chalk.gray('📄 Created .gitignore'));
     return;
   }
 
   const gitIgnoreContent = fs.readFileSync(gitIgnorePath, 'utf8');
   if (!gitIgnoreContent.includes('.biomeignore')) {
     fs.appendFileSync(gitIgnorePath, '\n# Create Biome\n.biomeignore\n');
-    console.log(chalk.gray('📄 已向 .gitignore 添加 .biomeignore 记录'));
+    console.log(chalk.gray('📄 Added .biomeignore to .gitignore'));
   }
 }
 
 function ensureEditorConfig(projectDir: string, template: TemplateDefinition) {
   const editorConfigFile = path.join(projectDir, '.editorconfig');
-  const existed = fs.existsSync(editorConfigFile);
+  if (fs.existsSync(editorConfigFile)) {
+    console.log(chalk.yellow('⚠️ .editorconfig already exists, keeping the current file'));
+    return;
+  }
+
   const editorConfigContent = loadEditorConfigTemplate(template);
   fs.writeFileSync(editorConfigFile, editorConfigContent);
-  if (existed) {
-    console.log(chalk.yellow('⚠️ 已覆盖现有 .editorconfig'));
-  } else {
-    console.log(chalk.gray('📄 已创建 .editorconfig'));
-  }
+  console.log(chalk.gray('📄 Created .editorconfig'));
 }
 
 function createBiomeConfig(projectDir: string, template: TemplateDefinition) {
-  const biomeJson = JSON.parse(fs.readFileSync(template.biomeTemplatePath, 'utf8'));
   const biomeJsonPath = path.join(projectDir, 'biome.json');
   if (fs.existsSync(biomeJsonPath)) {
-    console.log('⚠️ biome.json 已存在，不覆盖');
+    console.log('⚠️ biome.json already exists, skipping');
     return;
   }
+  const biomeJson = readJsonFile<Record<string, unknown>>(template.biomeTemplatePath);
   fs.writeFileSync(biomeJsonPath, JSON.stringify(biomeJson, null, 2));
-  console.log('✨ 已创建 biome.json');
+  console.log('✨ Created biome.json');
 }
 
 function loadEditorConfigTemplate(template: TemplateDefinition) {
@@ -89,44 +90,44 @@ function loadEditorConfigTemplate(template: TemplateDefinition) {
     return fs.readFileSync(filePath, 'utf8');
   }
 
-  throw new Error('缺少 editorconfig 模板，请检查安装包。');
+  throw new Error('Missing editorconfig template. Please check the package contents.');
 }
 
 export async function initBiome() {
   const projectDir = process.cwd();
-  intro(chalk.cyan('🚀 create-biome 初始化'));
+  intro(chalk.cyan('🚀 create-biome setup'));
 
-  const confirmInitDir = await confirm({ message: `在目录：${projectDir} 初始化？` });
+  const confirmInitDir = await confirm({ message: `Initialize in this directory: ${projectDir}?` });
   if (isCancel(confirmInitDir) || confirmInitDir === false) {
-    cancel('👋 已取消');
+    cancel('👋 Cancelled');
     process.exit(0);
   }
 
   const pkgJsonPath = path.join(projectDir, 'package.json');
   if (!fs.existsSync(pkgJsonPath)) {
-    cancel(`当前目录缺少 package.json`);
+    cancel('package.json is missing in the current directory');
     process.exit(1);
   }
 
   const defaultTemplate = availableTemplates.find((template) => template.isDefault);
   if (!defaultTemplate) {
-    cancel('当前缺少可用模板，请检查安装包。');
+    cancel('No templates are available. Please check the package contents.');
     process.exit(1);
   }
 
   const selectedTemplate = await select({
-    message: '选择项目模板',
+    message: 'Choose a project template',
     options: availableTemplates.map((template) => ({ value: template.id, label: template.label })),
     initialValue: defaultTemplate.id,
   });
 
   if (isCancel(selectedTemplate)) {
-    cancel('👋 已取消');
+    cancel('👋 Cancelled');
     process.exit(0);
   }
 
   if (typeof selectedTemplate !== 'string') {
-    cancel('👋 已取消');
+    cancel('👋 Cancelled');
     process.exit(0);
   }
 
@@ -137,13 +138,13 @@ export async function initBiome() {
 
   const detectedPM = detectPackageManager(projectDir);
   const packageManager = await select({
-    message: '选择包管理器',
+    message: 'Choose a package manager',
     options: buildPackageManagerChoices(detectedPM),
     initialValue: detectedPM,
   });
 
   if (isCancel(packageManager)) {
-    cancel('👋 已取消');
+    cancel('👋 Cancelled');
     process.exit(0);
   }
 
@@ -154,5 +155,5 @@ export async function initBiome() {
 
   await installDevPackages(packageManager, ['@biomejs/biome'], '@biomejs/biome');
 
-  outro('🎉 create-biome 初始化完成');
+  outro('🎉 create-biome setup complete');
 }

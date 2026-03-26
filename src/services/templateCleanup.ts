@@ -29,7 +29,7 @@ export function cleanupTemplateMarkers(targetDir: string, templateDirs: string[]
 
       fs.rmSync(targetPath, { recursive: true, force: true });
       const logPath = path.relative(targetDir, targetPath) || targetPath;
-      console.log(chalk.gray(`🧹 已删除 ${logPath}`));
+      console.log(chalk.gray(`🧹 Removed ${logPath}`));
     }
   };
 
