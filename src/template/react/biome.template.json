@@ -31,7 +31,8 @@
     "rules": {
       "style": {
         "useNodejsImportProtocol": "off",
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "useBlockStatements": "error"
       },
       "complexity": {
         "useDateNow": "off",
