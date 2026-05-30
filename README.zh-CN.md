@@ -19,6 +19,31 @@ npx create-biome
 
 CLI 会先确认目标目录和包管理器，然后应用所选模板。
 
+在 AI Agent、脚本、CI 等无交互环境中，可以传入 `--yes` 接受默认值：
+
+```bash
+npx create-biome --yes
+```
+
+也可以把设置写得完全明确：
+
+```bash
+npx create-biome --yes --template react --package-manager npm
+```
+
+如果只想更新文件、不安装依赖，可以使用：
+
+```bash
+npx create-biome --yes --no-install
+```
+
+## CLI 参数
+
+- `-y, --yes`：接受默认值并跳过交互式提示
+- `-t, --template <template>`：选择 `react` 或 `javascript`
+- `-p, --package-manager <package-manager>`：选择 `pnpm`、`npm`、`yarn` 或 `bun`
+- `--no-install`：跳过安装 `@biomejs/biome`
+
 ## 环境要求
 
 - Node.js 18 或更高版本

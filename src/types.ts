@@ -2,6 +2,13 @@ export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
 
 export type TemplateId = 'react' | 'javascript';
 
+export interface InitBiomeOptions {
+  yes?: boolean;
+  template?: TemplateId;
+  packageManager?: PackageManager;
+  install?: boolean;
+}
+
 export interface TemplateDefinition {
   id: TemplateId;
   label: string;

@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 import { availableTemplates, baseTemplateAssets, getTemplateById } from '../template/index.ts';
-import type { TemplateDefinition, TemplateId } from '../types.ts';
+import type { InitBiomeOptions, PackageManager, TemplateDefinition, TemplateId } from '../types.ts';
 import { cleanupTemplateMarkers } from '../services/templateCleanup.ts';
 import {
   applyPackageMergeSpec,
@@ -93,26 +93,49 @@ function loadEditorConfigTemplate(template: TemplateDefinition) {
   throw new Error('Missing editorconfig template. Please check the package contents.');
 }
 
-export async function initBiome() {
-  const projectDir = process.cwd();
-  intro(chalk.cyan('🚀 create-biome setup'));
+function canPrompt() {
+  return Boolean(process.stdin.isTTY && process.stdout.isTTY);
+}
+
+function ensureNonInteractiveRunHasConsent(options: InitBiomeOptions) {
+  if (options.yes || canPrompt()) {
+    return;
+  }
+
+  throw new Error(
+    'Interactive prompts are not available in this environment. Re-run with --yes to accept defaults, or combine --yes with --template and --package-manager for explicit setup.',
+  );
+}
+
+function getDefaultTemplate() {
+  const defaultTemplate = availableTemplates.find((template) => template.isDefault);
+  if (!defaultTemplate) {
+    cancel('No templates are available. Please check the package contents.');
+    process.exit(1);
+  }
+  return defaultTemplate;
+}
+
+async function confirmProjectDirectory(projectDir: string, options: InitBiomeOptions) {
+  if (options.yes) {
+    return;
+  }
 
   const confirmInitDir = await confirm({ message: `Initialize in this directory: ${projectDir}?` });
   if (isCancel(confirmInitDir) || confirmInitDir === false) {
     cancel('👋 Cancelled');
     process.exit(0);
   }
+}
 
-  const pkgJsonPath = path.join(projectDir, 'package.json');
-  if (!fs.existsSync(pkgJsonPath)) {
-    cancel('package.json is missing in the current directory');
-    process.exit(1);
+async function resolveTemplate(options: InitBiomeOptions): Promise<TemplateDefinition> {
+  if (options.template) {
+    return getTemplateById(options.template);
   }
 
-  const defaultTemplate = availableTemplates.find((template) => template.isDefault);
-  if (!defaultTemplate) {
-    cancel('No templates are available. Please check the package contents.');
-    process.exit(1);
+  const defaultTemplate = getDefaultTemplate();
+  if (options.yes) {
+    return defaultTemplate;
   }
 
   const selectedTemplate = await select({
@@ -131,12 +154,22 @@ export async function initBiome() {
     process.exit(0);
   }
 
-  const template = getTemplateById(selectedTemplate as TemplateId);
+  return getTemplateById(selectedTemplate as TemplateId);
+}
 
-  ensureIgnoreFiles(projectDir);
-  ensureEditorConfig(projectDir, template);
+async function resolvePackageManager(
+  projectDir: string,
+  options: InitBiomeOptions,
+): Promise<PackageManager> {
+  if (options.packageManager) {
+    return options.packageManager;
+  }
 
   const detectedPM = detectPackageManager(projectDir);
+  if (options.yes) {
+    return detectedPM;
+  }
+
   const packageManager = await select({
     message: 'Choose a package manager',
     options: buildPackageManagerChoices(detectedPM),
@@ -148,12 +181,44 @@ export async function initBiome() {
     process.exit(0);
   }
 
+  if (typeof packageManager !== 'string') {
+    cancel('👋 Cancelled');
+    process.exit(0);
+  }
+
+  return packageManager as PackageManager;
+}
+
+export async function initBiome(options: InitBiomeOptions = {}) {
+  const projectDir = process.cwd();
+  intro(chalk.cyan('🚀 create-biome setup'));
+
+  ensureNonInteractiveRunHasConsent(options);
+  await confirmProjectDirectory(projectDir, options);
+
+  const pkgJsonPath = path.join(projectDir, 'package.json');
+  if (!fs.existsSync(pkgJsonPath)) {
+    cancel('package.json is missing in the current directory');
+    process.exit(1);
+  }
+
+  const template = await resolveTemplate(options);
+
+  ensureIgnoreFiles(projectDir);
+  ensureEditorConfig(projectDir, template);
+
+  const packageManager = await resolvePackageManager(projectDir, options);
+
   createBiomeConfig(projectDir, template);
   applyTemplateToPackageJson(pkgJsonPath, template);
 
   cleanupTemplateMarkers(projectDir, [baseTemplateAssets.templateDir, template.templateDir]);
 
-  await installDevPackages(packageManager, ['@biomejs/biome'], '@biomejs/biome');
+  if (options.install === false) {
+    console.log(chalk.yellow('⚠️ Skipped installing @biomejs/biome'));
+  } else {
+    await installDevPackages(packageManager, ['@biomejs/biome'], '@biomejs/biome');
+  }
 
   outro('🎉 create-biome setup complete');
 }

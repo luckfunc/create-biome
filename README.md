@@ -19,6 +19,31 @@ npx create-biome
 
 The CLI confirms the target directory and package manager, then applies the selected template.
 
+For AI agents, scripts, and other non-interactive environments, pass `--yes` to accept defaults:
+
+```bash
+npx create-biome --yes
+```
+
+You can also make the setup fully explicit:
+
+```bash
+npx create-biome --yes --template react --package-manager npm
+```
+
+To update files without installing packages, use:
+
+```bash
+npx create-biome --yes --no-install
+```
+
+## CLI Options
+
+- `-y, --yes`: accept defaults and skip interactive prompts
+- `-t, --template <template>`: choose `react` or `javascript`
+- `-p, --package-manager <package-manager>`: choose `pnpm`, `npm`, `yarn`, or `bun`
+- `--no-install`: skip installing `@biomejs/biome`
+
 ## Requirements
 
 - Node.js 18 or newer
